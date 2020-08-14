@@ -29,6 +29,7 @@ Please note, since this runs in the context of the current users if you have pro
 
 ## Todo
 
-- Add a config file parser
+[X] Add a config file parser [(Or found is a better word)](https://github.com/rxi/ini)
+[ ] Get proxy state change with NLA working
 
 ## Change Log
