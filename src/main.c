@@ -1,48 +1,60 @@
 #include <windows.h>
-#include <winhttp.h>
+#include <wininet.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "ini.h"
 
-#pragma comment(lib, "winhttp.lib")
-
-int InitialSetup();
+#pragma comment(lib, "wininet.lib")
+//Turning this into a service
+//https://www.codeproject.com/Articles/499465/Simple-Windows-Service-in-Cplusplus
+bool InitialSetup();
 
 int main(){
+
 	ini_t *config;
+	char* ConfigProxy;
+	char* ConfigBypassList;
+	INTERNET_PER_CONN_OPTION OptionList;
+	DWORD dwBufferLength = sizeof(OptionList);
+	
+	OptionList.dwSize = sizeof(list);
+	OptionList.pszConnection = NULL;
+	OptionList.dwOptionCount = 4;
+	OptionList.pOptions = new INTERNET_PER_CONN_OPTION[3];
+
+	if(NULL == OptionList.pOptions){
+		printf("Stuff failed...\n");
+		return -1;
+	}
+	//Options we want
+	//INTERNET_PER_CONN_PROXY_SERVER
+	//INTERNET_PER_CONN_PROXY_BYPASS
+	//INTERNET_PER_CONN_FLAGS
+	//INTERNET_PER_CONN_AUTOCONFIG_URL
+
 	if(InitialSetup() != 0){
 		return -1;
 	}
+
 	config = ini_load("config.ini");
+
 	if(config == NULL){
 		printf("Failed to load config file\n");
 		return -1;
 	}
-	printf("Getting the WinHttp Proxy config: %s\n", ini_get(config,"winhttp","proxy")); 
-	WINHTTP_PROXY_INFO WinHttpProxyInfo;
-	WINHTTP_CURRENT_USER_IE_PROXY_CONFIG WinInetProxyInfo; 
-	int MakeChange = 1;
-	// Getting the winhttp proxy
 	
-	WinHttpGetDefaultProxyConfiguration(&WinHttpProxyInfo);
-	printf("WinHttp Proxy Config:\n");
-	printf("\tAccess type: %d \n\tProxyString: %ls \n\tProxy ByPass: %ls\n", 
-			WinHttpProxyInfo.dwAccessType, 
-			WinHttpProxyInfo.lpszProxy, 
-			WinHttpProxyInfo.lpszProxyBypass);
-	WinHttpGetIEProxyConfigForCurrentUser(&WinInetProxyInfo);
-	printf("WinInet Proxy Config:\n");
-	printf("\tWPAD Enabled: %i \n\tAuto Config URL: %ls\n\tManual Proxy: %ls\n\tProxy Bypass: %ls\n", 
-			WinInetProxyInfo.fAutoDetect, 
-			WinInetProxyInfo.lpszAutoConfigUrl, 
-			WinInetProxyInfo.lpszProxy,
-			WinInetProxyInfo.lpszProxyBypass);
-
-	if(MakeChange){
+	if(!InternetQueryOptionA(NULL, 
+			INTERNET_OPTION_PER_CONNECTION_OPTION,
+			&OptionList,
+			&dwBufferLength)){
+		printf("Getting inet proxy failed with: %lu\n", GetLastError());
+		return -1;
 	}
+
 	return 0;
 }
 
-int InitialSetup(){
+bool InitialSetup(){
 	char buffer[MAX_PATH];
 	char drive[_MAX_DRIVE];
 	char dir[_MAX_DIR];
