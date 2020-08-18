@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include "nla.h"
 #include "internetproxy.h"
 #include "systemproxy.h"
 #include "ini.h"
@@ -8,7 +9,7 @@
 //https://www.codeproject.com/Articles/499465/Simple-Windows-Service-in-Cplusplus
 
 int InitialSetup();
-
+int MonitorStateChange();
 int main(){
 
 	ini_t *config;
@@ -60,16 +61,16 @@ int main(){
 		WinHttp = 1;
 	}
 	if(ini_get(config, "winhttp", "bypass-list")){
-		systembypass = (char*)malloc(sizeof(ini_get(config, "wihttp", "bypass-list")));
+		systembypass = (char*)malloc(sizeof(ini_get(config, "winhttp", "bypass-list")));
 		ini_sget(config, "winhttp", "bypass-list", "%s", systembypass);
 	}
 
-	
-	if(Inet)
-		SetInternetProxy(WPAD, acu, inetproxy, inetbypass, 1);
-
-	if(WinHttp)
-		SetSystemProxy(systemproxy, systembypass, 1);
+	MonitorNLAState();	
+//	if(Inet)
+//		SetInternetProxy(WPAD, acu, inetproxy, inetbypass, 1);
+//
+//	if(WinHttp)
+//		SetSystemProxy(systemproxy, systembypass, 1);
 
 	if(acu)
 		free(acu);
@@ -84,10 +85,14 @@ int main(){
 	if(config)
 		ini_free(config);
 
-	DisableSystemProxy();
-	DisableInternetProxy();
+//	DisableSystemProxy();
+//	DisableInternetProxy();
 
 	return 0;
+}
+
+int MonitorStateChange(int condition){
+	
 }
 
 int InitialSetup(){

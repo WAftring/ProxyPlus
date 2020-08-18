@@ -1,0 +1,28 @@
+
+                        +----------------+      +----------------+
+                        |    nla.c       | Use  |  main.c        |
+                        | On NLA state   <------+                |
+                        | change set     | NLA  |  Core logic    |
+                        | proxy to X     |      |                |
+                        +------+---------+      +----------------+
+        Tells proxy interface  |
+        that NLA changed to Y  |
+                               |
+                        +------v---------+
+                        |   proxy.c      |
+                        | Reads config to|
+                        | set appropriate|
+                        | proxies        |
+                        |                |
++--------------------+  +-------+--------+  +-------------------------+
+|   internetproxy.c  |          |           |   systemproxy.c         |
+|                    |          |           |                         |
+|   Handles setting  |          |           |  Handles setting the    |
+|   the WININET      |          |           |  WINHTTP config         |
+|   config           <----------+----------->                         |
+|                    |                      |                         |
+|                    |                      |                         |
+|                    |                      |                         |
+|                    |                      |                         |
+|                    |                      |                         |
++--------------------+                      +-------------------------+
