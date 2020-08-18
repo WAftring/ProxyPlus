@@ -24,6 +24,10 @@ jobs:
       
      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+    
+    # Doing some testing
+    - name: Echo current dir
+      run: dir
       
     # Runs build script
     - name: Run build script
