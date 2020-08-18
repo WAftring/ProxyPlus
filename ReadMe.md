@@ -31,8 +31,11 @@ Please note, since this runs in the context of the current users if you have pro
 
 - [X] Add a config file parser [(Or found is a better word)](https://github.com/rxi/ini)
 - [X] Get WinHttp proxy working
-- [ ] Get WinInet proxy working
-- [ ] Convert the application to a service
+- [X] Get WinInet proxy working
+- [ ] Add monitoring for state change
+- [ ] Add option to run as a service
 - [ ] Get proxy state change with NLA working
 
 ## Change Log
+
+- 08/13 Testing Versions
