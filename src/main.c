@@ -35,53 +35,10 @@ int main(){
 		return -1;
 	}
 	
-	if(ini_get(config, "wininet", "WPAD")){
-		WPAD = 1;
-		Inet = 1;
-	}
 
-	// config variable loading
-	if(ini_get(config, "wininet", "auto-config-url")){
-		acu = malloc(sizeof(ini_get(config, "wininet", "auto-config-url")));
-		ini_sget(config, "wininet", "auto-config-url", "%s", acu);
-		Inet = 1;
-	}
-	if(ini_get(config, "wininet", "proxy")){
-		inetproxy = (char*)malloc(sizeof(ini_get(config, "wininet", "proxy")));
-		ini_sget(config, "wininet", "proxy", "%s", inetproxy);
-		Inet = 1;
-	}
-	if(ini_get(config, "wininet", "bypass-list")){
-		inetbypass = calloc(0, sizeof(ini_get(config, "wininet", "bypass-list")));
-		ini_sget(config, "wininet", "bypass-list", "%s", inetbypass);
-	}
-	if(ini_get(config, "winhttp", "proxy")){
-		systemproxy = (char*)malloc(sizeof(ini_get(config, "winhttp", "proxy")));
-		ini_sget(config, "winhttp", "proxy", "%s", systemproxy);
-		WinHttp = 1;
-	}
-	if(ini_get(config, "winhttp", "bypass-list")){
-		systembypass = (char*)malloc(sizeof(ini_get(config, "winhttp", "bypass-list")));
-		ini_sget(config, "winhttp", "bypass-list", "%s", systembypass);
-	}
 
-	MonitorNLAState();	
-//	if(Inet)
-//		SetInternetProxy(WPAD, acu, inetproxy, inetbypass, 1);
-//
-//	if(WinHttp)
-//		SetSystemProxy(systemproxy, systembypass, 1);
+	NLANotify();	
 
-	if(acu)
-		free(acu);
-	if(inetproxy)
-		free(inetproxy);
-	if(inetbypass)
-		free(inetbypass);
-	if(systemproxy)
-		free(systemproxy);
-	if(systembypass)
-		free(systembypass);
 	if(config)
 		ini_free(config);
 
@@ -91,9 +48,6 @@ int main(){
 	return 0;
 }
 
-int MonitorStateChange(int condition){
-	
-}
 
 int InitialSetup(){
 	/* We need to go to the directory that contains the ini since the

@@ -1,11 +1,17 @@
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "iphlpapi.lib")
 
 #include <winsock2.h>
 #include <Mswsock.h>
+#include <iphlpapi.h>
 #include <stdio.h>
+
+#include "proxy.h"
 
 #define wsaerrno WSAGetLastError()
 // https://docs.microsoft.com/en-us/previous-versions//aa364726(v=vs.85)?redirectedfrom=MSDN
+
+int GetInterfaceCount();
 
 int NLANotify(){
 
@@ -23,6 +29,7 @@ int NLANotify(){
 	// From there we can check our domain connectivity
 	
 	//@TODO There is a lot more to take a look at here...
+	
 	WSADATA WSD;
 	char buff[16384];
 	HANDLE hNLA;
@@ -31,6 +38,10 @@ int NLANotify(){
 	GUID NLANameSpaceGUID = NLA_SERVICE_CLASS_GUID;
 	PNLA_BLOB pNLA;
 	DWORD Offset = 0;
+	int *NetworkStateArray;
+	int NumAdapters = 0;
+	int iterator = 0;
+	int StateChanged = 1;
 
 	// Starting WSA
 	if(WSAStartup(MAKEWORD(2,2),&WSD) != 0){
@@ -59,10 +70,19 @@ int NLANotify(){
 		printf("WSALookupServiceBegin failed with: %d\n", wsaerrno);
 		return -1;
 	}
+	
+	// This is for the inital adapter number
+	NumAdapters = GetInterfaceCount(); 	
+	if(NumAdapters < 1)
+		return -1;
 
+	NetworkStateArray = (int*)calloc(0, sizeof(int)*NumAdapters);	
+	
 	while(1){
+		
 		memset(QuerySet, 0, sizeof(*QuerySet));
 		BufferSize = sizeof(buff);
+
 		if(WSALookupServiceNext(hNLA,LUP_RETURN_ALL,&BufferSize,QuerySet) != 0){
 
 			// This just means we don't have new data
@@ -70,7 +90,13 @@ int NLANotify(){
 				//@TODO turn this into a debug line
 				printf("No more data\n");
 				WSALookupServiceEnd(hNLA);
-				break;
+				if(StateChanged){
+					SetProxyNLA(NetworkStateArray);
+					if(NetworkStateArray)
+						free(NetworkStateArray);
+				}
+				StateChanged = 0;
+				iterator = 0;
 			}
 			else{
 				//@TODO turn this into a debug line
@@ -80,6 +106,12 @@ int NLANotify(){
 		}
 		// We succeeded in polling NLA and have new data
 		else{
+			if(StateChanged == 0){
+				StateChanged = 1;
+				NumAdapters = GetInterfaceCount();
+				NetworkStateArray = (int*)calloc(0, sizeof(int)*NumAdapters);
+			}
+
 			printf("\nNetwork Name: %s\n", QuerySet->lpszServiceInstanceName);
 			printf("Comment (if any): %s\n", QuerySet->lpszComment);
 			if(QuerySet->lpBlob != NULL){
@@ -89,14 +121,18 @@ int NLANotify(){
 					if(pNLA->header.type == NLA_CONNECTIVITY){
 						printf("\tNLA Data Type: NLA_CONNECTIVITY\n");
 						printf("\t\t%d\n", pNLA->data.connectivity.type);
+						NetworkStateArray[iterator] = pNLA->data.connectivity.type;
+						iterator++;
 					}
 					Offset = pNLA->header.nextOffset;
-				}while(Offset != 0);
 
-				//SetProxy(pNLA->data.connectivity.type);
+				}while(Offset != 0);
 			}
 		}
 	}
+
+	if(NetworkStateArray)
+		free(NetworkStateArray);
 
 	return 0;
 }
@@ -185,4 +221,23 @@ int CheckNLAState(){
 		}				
 	}
 	return 0;
+}
+
+int GetInterfaceCount(){
+	PIP_INTERFACE_INFO pInfo = NULL;
+	ULONG ulInterfaceBuffer;
+	int RetVal = -1;
+	
+	if(GetInterfaceInfo(
+		NULL,
+		&ulInterfaceBuffer) == NO_ERROR){
+		
+		if(GetInterfaceInfo(
+			pInfo,
+			&ulInterfaceBuffer) == NO_ERROR){
+			RetVal = pInfo->NumAdapters;
+		}
+	}
+
+	return RetVal;
 }
