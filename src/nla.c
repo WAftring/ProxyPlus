@@ -124,9 +124,10 @@ int NLANotify(){
 						NetworkStateArray[iterator] = pNLA->data.connectivity.type;
 						iterator++;
 					}
-					Offset = pNLA->header.nextOffset;
+					Offset += pNLA->header.nextOffset;
 
-				}while(Offset != 0);
+				}while(pNLA->header.nextOffset != 0);
+				Offset = 0;
 			}
 		}
 	}
@@ -230,14 +231,20 @@ int GetInterfaceCount(){
 	
 	if(GetInterfaceInfo(
 		NULL,
-		&ulInterfaceBuffer) == NO_ERROR){
-		
+		&ulInterfaceBuffer) == ERROR_INSUFFICIENT_BUFFER){
+		pInfo = (IP_INTERFACE_INFO*)malloc(ulInterfaceBuffer);	
 		if(GetInterfaceInfo(
 			pInfo,
 			&ulInterfaceBuffer) == NO_ERROR){
+
 			RetVal = pInfo->NumAdapters;
 		}
 	}
+	else
+		printf("GetInterfaceInfo: failed with: %lu\n", GetLastError());
+
+	if(pInfo)
+		free(pInfo);
 
 	return RetVal;
 }
