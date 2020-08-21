@@ -76,13 +76,13 @@ int NLANotify(){
 	if(NumAdapters < 1)
 		return -1;
 
-	NetworkStateArray = (int*)calloc(0, sizeof(int)*NumAdapters);	
+	NetworkStateArray = (int*)calloc(NumAdapters, sizeof(int));	
 	
 	while(1){
 		
 		memset(QuerySet, 0, sizeof(*QuerySet));
 		BufferSize = sizeof(buff);
-
+		//@TODO Right now I am getting an invalid handle...
 		if(WSALookupServiceNext(hNLA,LUP_RETURN_ALL,&BufferSize,QuerySet) != 0){
 
 			// This just means we don't have new data
@@ -97,6 +97,13 @@ int NLANotify(){
 				}
 				StateChanged = 0;
 				iterator = 0;
+			}
+			if(wsaerrno == WSA_INVALID_HANDLE){
+				//Maybe turn this into a function?
+				if(WSALookupServiceBegin(QuerySet, LUP_RETURN_ALL, &hNLA) != 0){
+					printf("WSALookupServiceBegin failed with: %d\n", wsaerrno);
+					return -1;
+				}
 			}
 			else{
 				//@TODO turn this into a debug line

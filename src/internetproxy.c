@@ -23,7 +23,8 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 
 	Option[0].dwOption = INTERNET_PER_CONN_FLAGS;
 	Option[0].Value.dwValue = PROXY_TYPE_DIRECT;
-
+	
+	// This section needs to be cleaned up because it is a bug waiting to happen...
 	if(enable){
 		
 		// Enable WPAD
@@ -55,14 +56,15 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 	list.dwOptionCount = OptionCount;
 	list.dwOptionError = 0;
 	list.pOptions = Option;
-	
-	if(!InternetSetOptionA(NULL, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwSize)){
-		//@TODO Add this to a debug line
-		printf("Failed to set proxy: %lu", GetLastError());
-		if(Option)
-			free(Option);
-		return -1;	
-	}
+
+	//While testing NLA funtctionality	
+//	if(!InternetSetOptionA(NULL, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwSize)){
+//		//@TODO Add this to a debug line
+//		printf("Failed to set proxy: %lu", GetLastError());
+//		if(Option)
+//			free(Option);
+//		return -1;	
+//	}
 
 	if(Option)
 		free(Option);
