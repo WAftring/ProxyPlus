@@ -95,11 +95,13 @@ int NLANotify(){
 					if(NetworkStateArray)
 						free(NetworkStateArray);
 				}
+
 				StateChanged = 0;
 				iterator = 0;
 			}
-			if(wsaerrno == WSA_INVALID_HANDLE){
+			else if(wsaerrno == WSA_INVALID_HANDLE){
 				//Maybe turn this into a function?
+				//This is returning invalid handle why?
 				if(WSALookupServiceBegin(QuerySet, LUP_RETURN_ALL, &hNLA) != 0){
 					printf("WSALookupServiceBegin failed with: %d\n", wsaerrno);
 					return -1;

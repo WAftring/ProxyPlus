@@ -6,25 +6,30 @@
 #pragma comment(lib, "winhttp.lib")
 
 int SetSystemProxy(char* proxy, char* bypass, int enable){
-	wchar_t* ProxyBuffer;
-	wchar_t* BypassBuffer;
+	int wchar_num = 0;
+	wchar_t* ProxyBuffer = NULL;
+	wchar_t* BypassBuffer = NULL;
 	int retval = 0;
+
 	WINHTTP_PROXY_INFO SetProxy;
 	
 	SetProxy.dwAccessType = WINHTTP_ACCESS_TYPE_NO_PROXY;
 
 	if(enable){
-		// @TODO
-		// Here is where our heap corruption is coming from.
-		// Lots to do to fix this
-		ProxyBuffer = (wchar_t*)malloc(sizeof(proxy));
-		BypassBuffer = (wchar_t*)malloc(sizeof(bypass));
-		swprintf_s(ProxyBuffer, sizeof(ProxyBuffer), L"%s", proxy);
-		mbstowcs_s(NULL, ProxyBuffer, 256, proxy, 256);
+
+		wchar_num = MultiByteToWideChar(CP_UTF8, 0, proxy, -1, NULL, 0);
+		ProxyBuffer = (wchar_t*)malloc(sizeof(wchar_t)*wchar_num);
+		MultiByteToWideChar(CP_UTF8, 0, proxy, -1, ProxyBuffer, wchar_num);
 		SetProxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;	
 		SetProxy.lpszProxy = ProxyBuffer;
-		mbstowcs_s(NULL, BypassBuffer, 256, bypass, 256);
+
+		wchar_num = MultiByteToWideChar(CP_UTF8, 0, bypass, -1, NULL, 0);
+		BypassBuffer = (wchar_t*)malloc(sizeof(wchar_t)*wchar_num);
+		MultiByteToWideChar(CP_UTF8, 0, bypass, -1, BypassBuffer, wchar_num);
 		SetProxy.lpszProxyBypass = BypassBuffer;
+
+		free(ProxyBuffer);
+		free(BypassBuffer);
 	}
 
 	//@TODO TEMP While testing NLA functionality
@@ -42,13 +47,6 @@ int SetSystemProxy(char* proxy, char* bypass, int enable){
 //				SetProxy.lpszProxy, 
 //				SetProxy.lpszProxyBypass);
 //	}
-
-	//@IMPORTANT fix this
-	//This is causing heap corruption...
-	if(ProxyBuffer)
-		free(ProxyBuffer);
-	if(BypassBuffer)
-		free(BypassBuffer);
 
 	return retval;
 }

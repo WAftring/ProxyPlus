@@ -45,28 +45,29 @@ int SetProxyNLA(int *networkstatearray){
 			Inet = 1;
 		}
 
+		// @TODO Something in here is causing heap corruption...
 		// config variable loading
 		if(ini_get(proxyconfig, "wininet", "auto-config-url")){
-			acu = (char*)malloc(sizeof(ini_get(proxyconfig, "wininet", "auto-config-url")));
+			acu = (char*)malloc(sizeof(char) * strlen(ini_get(proxyconfig, "wininet", "auto-config-url")));
 			ini_sget(proxyconfig, "wininet", "auto-config-url", "%s", acu);
 			Inet = 1;
 		}
 		if(ini_get(proxyconfig, "wininet", "proxy")){
-			inetproxy = (char*)malloc(sizeof(ini_get(proxyconfig, "wininet", "proxy")));
+			inetproxy = (char*)malloc(sizeof(char) * strlen(ini_get(proxyconfig, "wininet", "proxy")));
 			ini_sget(proxyconfig, "wininet", "proxy", "%s", inetproxy);
 			Inet = 1;
 		}
 		if(ini_get(proxyconfig, "wininet", "bypass-list")){
-			inetbypass = (char*)malloc(sizeof(ini_get(proxyconfig, "wininet", "bypass-list")));
+			inetbypass = (char*)malloc(sizeof(char) * strlen(ini_get(proxyconfig, "wininet", "bypass-list")));
 			ini_sget(proxyconfig, "wininet", "bypass-list", "%s", inetbypass);
 		}
 		if(ini_get(proxyconfig, "winhttp", "proxy")){
-			systemproxy = (char*)malloc(sizeof(ini_get(proxyconfig, "winhttp", "proxy")));
+			systemproxy = (char*)malloc(sizeof(char) * strlen(ini_get(proxyconfig, "winhttp", "proxy")));
 			ini_sget(proxyconfig, "winhttp", "proxy", "%s", systemproxy);
 			WinHttp = 1;
 		}
 		if(ini_get(proxyconfig, "winhttp", "bypass-list")){
-			systembypass = (char*)malloc(sizeof(ini_get(proxyconfig, "winhttp", "bypass-list")));
+			systembypass = (char*)malloc(sizeof(char) * strlen(ini_get(proxyconfig, "winhttp", "bypass-list")));
 			ini_sget(proxyconfig, "winhttp", "bypass-list", "%s", systembypass);
 		}
 
