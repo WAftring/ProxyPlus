@@ -1,16 +1,13 @@
-//@TODO This will be a wrapper around the internetproxy.c
-// and systemproxy.c
-
-#include <windows.h>
+//This is really just a wrapper around
+//systemproxy.c and internetproxy.c
+#include "common.h"
 #include "ini.h"
 #include "proxy.h"
 #include "systemproxy.h"
 #include "internetproxy.h"
 
 
-//@TODO This function will be changed
 int SetProxyNLA(int *networkstatearray){
-
 
 	int inDomain = 0;
 	ini_t *proxyconfig;	
@@ -25,7 +22,7 @@ int SetProxyNLA(int *networkstatearray){
 	char* systemproxy;
 	char* systembypass;
 
-	//@TODO We need to check the array of the number of adapters and the connectivity state they are in	
+	// We need to check the array of the number of adapters and the connectivity state they are in	
 	for(int i = 0; i <= sizeof(networkstatearray)/sizeof(int); i++){
 		if(networkstatearray[i] == NETWORK_MANAGED)
 			inDomain = 1;
@@ -36,7 +33,7 @@ int SetProxyNLA(int *networkstatearray){
 		proxyconfig = ini_load("config.ini");
 
 		if(proxyconfig == NULL){
-			printf("Failed to load config file\n");
+                        log_fatal("Failed to load config file");
 			return -1;
 		}
 
@@ -45,7 +42,6 @@ int SetProxyNLA(int *networkstatearray){
 			Inet = 1;
 		}
 
-		// @TODO Something in here is causing heap corruption...
 		// config variable loading
 		if(ini_get(proxyconfig, "wininet", "auto-config-url")){
 			acu = (char*)malloc(sizeof(char) * strlen(ini_get(proxyconfig, "wininet", "auto-config-url")));
@@ -71,11 +67,15 @@ int SetProxyNLA(int *networkstatearray){
 			ini_sget(proxyconfig, "winhttp", "bypass-list", "%s", systembypass);
 		}
 
-		if(Inet)
+		if(Inet){
+                        log_info("Setting WinInet proxy");
 			SetInternetProxy(WPAD, acu, inetproxy, inetbypass, 1);	
+                }
 
-		if(WinHttp)
+		if(WinHttp){
+                        log_info("Setting WinHttp proxy");
 			SetSystemProxy(systemproxy, systembypass, 1);	
+                }
 
 		if(acu)
 			free(acu);

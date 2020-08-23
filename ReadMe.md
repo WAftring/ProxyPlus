@@ -32,7 +32,8 @@ Please note, since this runs in the context of the current users if you have pro
 - [X] Add a config file parser [(Or found is a better word)](https://github.com/rxi/ini)
 - [X] Get WinHttp proxy working
 - [X] Get WinInet proxy working
-- [ ] Get proxy state change with NLA working
+- [X] Get proxy state change with NLA working
+- [X] Add logging [(again very nice rxi)](https://github.com/rxi/log.c)
 - [ ] Add can reach X state check
 - [ ] Add time of day state change watch
 - [ ] Add option to run as a service

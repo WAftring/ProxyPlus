@@ -1,11 +1,11 @@
-#include <windows.h>
+#include "common.h"
 #include <winhttp.h>
-#include <stdio.h>
 #include "systemproxy.h"
 
 #pragma comment(lib, "winhttp.lib")
 
 int SetSystemProxy(char* proxy, char* bypass, int enable){
+
 	int wchar_num = 0;
 	wchar_t* ProxyBuffer = NULL;
 	wchar_t* BypassBuffer = NULL;
@@ -32,21 +32,17 @@ int SetSystemProxy(char* proxy, char* bypass, int enable){
 		free(BypassBuffer);
 	}
 
-	//@TODO TEMP While testing NLA functionality
-//	if(!WinHttpSetDefaultProxyConfiguration(&SetProxy)){
-//		//@TODO Add this to a debug line
-//		printf("Failed to set Winhttp proxy with: %lu\n", GetLastError());
-//		retval = -1;
-//	}
-//	else{
-//		//@TODO add this to a debug line
-//		WinHttpGetDefaultProxyConfiguration(&SetProxy);
-//		printf("WinHttp Proxy:\n");
-//		printf("\tAccess type: %d \n\tProxyString: %ls \n\tProxy ByPass: %ls\n", 
-//				SetProxy.dwAccessType, 
-//				SetProxy.lpszProxy, 
-//				SetProxy.lpszProxyBypass);
-//	}
+	if(!WinHttpSetDefaultProxyConfiguration(&SetProxy)){
+                log_error("Failed to set WinHttp proxy with: %lu", GetLastError());
+		retval = -1;
+	}
+	else{
+		WinHttpGetDefaultProxyConfiguration(&SetProxy);
+                log_debug("WinHttp proxy set to\n\tAccess-Type: %s\n\tProxy-String: %s\n\tProxy-bypass: %s", 
+                        SetProxy.dwAccessType, 
+                        SetProxy.lpszProxy, 
+                        SetProxy.lpszProxyBypass);
+	}
 
 	return retval;
 }

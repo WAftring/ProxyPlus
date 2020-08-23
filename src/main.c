@@ -1,55 +1,58 @@
-#include <windows.h>
-#include <stdio.h>
+#include "common.h"
+#include <string.h>
 #include "nla.h"
-#include "internetproxy.h"
-#include "systemproxy.h"
 #include "ini.h"
 
-//Turning this into a service
-//https://www.codeproject.com/Articles/499465/Simple-Windows-Service-in-Cplusplus
+FILE* InitialSetup();
+void ParseLogLevel(const char* LogLevel);
 
-int InitialSetup();
-int MonitorStateChange();
 int main(){
-
+        FILE* pFile; 
 	ini_t *config;
-	char* ConfigProxy;
-	char* ConfigBypassList;
-	int WPAD = 0;
-	int Inet = 0;
-	int WinHttp = 0;
-	char* acu;
-	char* inetproxy;
-	char* inetbypass;
-	char* systemproxy;
-	char* systembypass;
-
-	if(InitialSetup() != 0){
+        char* LogLevel;
+        char* StateCheck;
+        
+        pFile = InitialSetup();
+	if(pFile == NULL){
 		return -1;
 	}
-
+        else{
+            log_add_fp(pFile, LOG_INFO);
+            log_set_quiet(true);
+            log_info("Logger started");
+        }
 	config = ini_load("config.ini");
 
 	if(config == NULL){
-		printf("Failed to load config file\n");
+                log_fatal("Failed to read config file");
 		return -1;
 	}
-	
 
+        //Reading the general config
+        LogLevel = (char*)malloc(sizeof(char) * strlen(ini_get(config, "general", "log-level")));
+        ini_sget(config, "general", "log-level", "%s", LogLevel);
+        ParseLogLevel(LogLevel);
+        StateCheck = (char*)malloc(sizeof(char) * strlen(ini_get(config, "general", "watch")));
+        ini_sget(config, "general", "watch", "%s", StateCheck);
+        
+        //At some point this will need to be turned into a function
+        if(strcmp(StateCheck, "NLA") == 0)
+            NLANotify();	
+        else
+            log_fatal("No proxy procedure matched");
 
-	NLANotify();	
-
+        if(StateCheck)
+            free(StateCheck);
 	if(config)
 		ini_free(config);
 
-//	DisableSystemProxy();
-//	DisableInternetProxy();
+        fclose(pFile);
 
 	return 0;
 }
 
 
-int InitialSetup(){
+FILE* InitialSetup(){
 	/* We need to go to the directory that contains the ini since the
 	   default is the call of the exe */
 	char buffer[MAX_PATH];
@@ -57,10 +60,12 @@ int InitialSetup(){
 	char dir[_MAX_DIR];
 	char fname[_MAX_FNAME];
 	char ext[_MAX_EXT];
+        FILE* pTemp;
+        errno_t err;
 
 	if(GetModuleFileNameA(NULL, buffer, MAX_PATH) == 0){
 		printf("Unable to determine path.\nCan't read config.\n");
-		return -1;
+		return NULL;
 	}
 
 	_splitpath(buffer, drive, dir, fname, ext);
@@ -69,8 +74,22 @@ int InitialSetup(){
 
 	if(SetCurrentDirectory(buffer) == 0){
 		printf("Failed to change directory to executable path with error: %d\n", GetLastError());
-		return -1;
+		return NULL;
 	}
-	
-	return 0;
+
+        err = fopen_s(&pTemp, "ProxyPlus.log", "a");
+
+        if(err != 0)
+            return NULL;
+
+	return pTemp;
+}
+
+void ParseLogLevel(const char* LogLevel){
+
+    if(LogLevel == "DEBUG")
+        log_set_level(LOG_DEBUG);
+    else
+        log_set_level(LOG_INFO);
+
 }

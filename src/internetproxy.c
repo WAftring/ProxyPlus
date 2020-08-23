@@ -1,22 +1,27 @@
-#include <windows.h>
+#include "common.h"
 #include <wininet.h>
-#include <stdio.h>
 #include "internetproxy.h"
 
 #pragma comment(lib, "wininet.lib")
 
 int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable){
-	
+        log_debug("Entering SetInternetProxy.c");	
 	int OptionCount = 1;
 	INTERNET_PER_CONN_OPTION_LIST list;
 	DWORD dwSize = sizeof(list);
 
-	if(WPAD)
+	if(WPAD){
+                log_debug("WPAD defined");
 		OptionCount++;
-	if(acu)
+        }
+	if(acu){
+                log_debug("Auto config URL defined");
 		OptionCount++;
-	if(proxy)
+        }
+	if(proxy){
+                log_debug("Manual proxy defined");
 		OptionCount++;
+        }
 
 	INTERNET_PER_CONN_OPTION *Option = (INTERNET_PER_CONN_OPTION*)malloc(OptionCount * 
 			sizeof(INTERNET_PER_CONN_OPTION));
@@ -26,7 +31,7 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 	
 	// This section needs to be cleaned up because it is a bug waiting to happen...
 	if(enable){
-		
+	        log_info("Enabling WinInet proxy");	
 		// Enable WPAD
 		if(WPAD)
 			Option[0].Value.dwValue |= PROXY_TYPE_AUTO_DETECT;
@@ -51,6 +56,9 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 
 	}
 
+        else
+            log_info("Disabling WinInet proxy");
+
 	list.dwSize = sizeof(list);
 	list.pszConnection = NULL;
 	list.dwOptionCount = OptionCount;
@@ -58,13 +66,12 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 	list.pOptions = Option;
 
 	//While testing NLA funtctionality	
-//	if(!InternetSetOptionA(NULL, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwSize)){
-//		//@TODO Add this to a debug line
-//		printf("Failed to set proxy: %lu", GetLastError());
-//		if(Option)
-//			free(Option);
-//		return -1;	
-//	}
+	if(!InternetSetOptionA(NULL, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwSize)){
+                log_error("Failed to set proxy with error: %lu", GetLastError());
+		if(Option)
+			free(Option);
+		return -1;	
+	}
 
 	if(Option)
 		free(Option);
