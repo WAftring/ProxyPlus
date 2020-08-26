@@ -87,7 +87,8 @@ FILE* InitialSetup(){
 
 void ParseLogLevel(const char* LogLevel){
 
-    if(LogLevel == "DEBUG")
+	//@TODO This doesn't work right now...
+    if(strcmp(LogLevel, "DEBUG") == 0)
         log_set_level(LOG_DEBUG);
     else
         log_set_level(LOG_INFO);

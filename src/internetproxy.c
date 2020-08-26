@@ -5,6 +5,7 @@
 #pragma comment(lib, "wininet.lib")
 
 int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable){
+
         log_debug("Entering SetInternetProxy.c");	
 	int OptionCount = 1;
 	INTERNET_PER_CONN_OPTION_LIST list;
@@ -44,15 +45,15 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 
 		// Set Manual Proxy
 		Option[1].dwOption = INTERNET_PER_CONN_PROXY_SERVER;
-		Option[1].Value.pszValue = TEXT("http://localhost:2000");
+		Option[1].Value.pszValue = TEXT(proxy);
 
 		// Set bypass-list
 		Option[2].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
-		Option[2].Value.pszValue = TEXT("<local>");
+		Option[2].Value.pszValue = TEXT(bypass);
 
 		// Set ACU
 		Option[3].dwOption = INTERNET_PER_CONN_AUTOCONFIG_URL;
-		Option[3].Value.pszValue = TEXT("http://localhost:2001");
+		Option[3].Value.pszValue = TEXT(acu);
 
 	}
 
@@ -73,8 +74,9 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 		return -1;	
 	}
 
-	if(Option)
-		free(Option);
-
+	//@TODO For some reason this isn't freeing our memory...
+	//And this is causing memory issues down the line
+	free(Option);
+	Option = NULL;
 	return 1;
 }

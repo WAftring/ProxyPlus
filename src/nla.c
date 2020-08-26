@@ -34,9 +34,11 @@ int NLANotify(){
 	HANDLE hNLA;
 	DWORD BufferSize;
 	WSAQUERYSET* QuerySet = NULL;
+	WSACOMPLETION lpCompletion;
 	GUID NLANameSpaceGUID = NLA_SERVICE_CLASS_GUID;
 	PNLA_BLOB pNLA;
 	DWORD Offset = 0;
+	DWORD lpcbBytesReturned = 0;
 	int *NetworkStateArray;
 	int NumAdapters = 0;
 	int iterator = 0;
@@ -44,7 +46,6 @@ int NLANotify(){
     
 	// Starting WSA
 	if(WSAStartup(MAKEWORD(2,2),&WSD) != 0){
-		//@TODO Turn this into a fatal error and debug
                 log_error("Failed to start Winsock with: %d", wsaerrno);
 		return -1;
 	}
@@ -68,7 +69,7 @@ int NLANotify(){
                 log_fatal("NLA namespace search failed with: %d", wsaerrno);
 		return -1;
 	}
-	
+
 	// This is for the inital adapter number
 	NumAdapters = GetInterfaceCount(); 	
 	if(NumAdapters < 1)
@@ -80,7 +81,8 @@ int NLANotify(){
 		
 		memset(QuerySet, 0, sizeof(*QuerySet));
 		BufferSize = sizeof(buff);
-		if(WSALookupServiceNext(hNLA,LUP_RETURN_ALL,&BufferSize,QuerySet) != 0){
+
+		if(WSALookupServiceNext(hNLA,LUP_RETURN_BLOB,&BufferSize,QuerySet) != 0){
             
 			// This just means we don't have new data
 			if(wsaerrno == WSA_E_NO_MORE){
@@ -92,6 +94,24 @@ int NLANotify(){
 						free(NetworkStateArray);
 				}
                 
+				// For single-threaded applications, a typical method to use the WSANSPIoctl function 
+				// is as follows. Call the WSANSPIoctl function with the dwControlCode parameter 
+				// set to SIO_NSP_NOTIFY_CHANGE with no completion routine 
+				// (the lpCompletion parameter set to NULL) after every WSALookupServiceNext 
+				// function call to make sure the query data is still valid. If the data becomes invalid, 
+				// call the WSALookupServiceEndfunction to close the query handle. Call the WSALookupServiceBegin function to retrieve a new query handle and begin the query again.
+				//
+				// This will block until a network state change occurs
+				if(WSANSPIoctl(
+				  hNLA,
+				  SIO_NSP_NOTIFY_CHANGE,
+				  NULL,0,NULL,0,
+				  &lpcbBytesReturned,
+				  NULL
+				) != NO_ERROR){
+					log_error("Failed to set the WSANSPIoctl: %d", wsaerrno);
+				}
+
 				StateChanged = 0;
 				iterator = 0;
 			}
@@ -110,7 +130,7 @@ int NLANotify(){
 			if(StateChanged == 0){
 				StateChanged = 1;
 				NumAdapters = GetInterfaceCount();
-				NetworkStateArray = (int*)calloc(0, sizeof(int)*NumAdapters);
+				NetworkStateArray = (int*)calloc(NumAdapters, sizeof(int));
 			}
             
                         log_debug("Network name: %s", QuerySet->lpszServiceInstanceName);
