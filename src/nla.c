@@ -27,8 +27,6 @@ int NLANotify(){
 	//
 	// From there we can check our domain connectivity
 	
-	//@TODO There is a lot more to take a look at here...
-	
 	WSADATA WSD;
 	char buff[16384];
 	HANDLE hNLA;
@@ -76,7 +74,7 @@ int NLANotify(){
 		return -1;
     
 	NetworkStateArray = (int*)calloc(NumAdapters, sizeof(int));	
-	
+		
 	while(1){
 		
 		memset(QuerySet, 0, sizeof(*QuerySet));
@@ -86,9 +84,9 @@ int NLANotify(){
             
 			// This just means we don't have new data
 			if(wsaerrno == WSA_E_NO_MORE){
-                                log_debug("No more data found. Waiting for state change");
+				log_debug("No more data found. Waiting for state change");
 				if(StateChanged){
-                                        log_debug("Entering SetProxyNLA");
+					log_debug("Entering SetProxyNLA");
 					SetProxyNLA(NetworkStateArray);
 					if(NetworkStateArray)
 						free(NetworkStateArray);
@@ -116,12 +114,12 @@ int NLANotify(){
 				iterator = 0;
 			}
 			else if(wsaerrno == WSA_INVALID_HANDLE){
-                                    log_debug("WSALookupServiceInvalid handle");
-                                    return -1;
+				log_debug("WSALookupServiceInvalid handle");
+				return -1;
                         }
 			
 			else{
-                                log_debug("WSALookupService unexpected error: %d", wsaerrno);
+				log_debug("WSALookupService unexpected error: %d", wsaerrno);
 				return -1;
 			}
 		}
@@ -133,13 +131,19 @@ int NLANotify(){
 				NetworkStateArray = (int*)calloc(NumAdapters, sizeof(int));
 			}
             
-                        log_debug("Network name: %s", QuerySet->lpszServiceInstanceName);
+			log_debug("Network name: %s", QuerySet->lpszServiceInstanceName);
 			if(QuerySet->lpBlob != NULL){
 				do
 				{
+					//@TODO This needs to be cleaned up...
 					pNLA = (PNLA_BLOB) &(QuerySet->lpBlob->pBlobData[Offset]);
+					if(pNLA->header.type == NLA_INTERFACE){
+						printf("%d\n", pNLA->data.interfaceData.dwType);
+						printf("%d\n", pNLA->data.interfaceData.dwSpeed);
+						printf("%s\n", pNLA->data.interfaceData.adapterName);	
+					}
 					if(pNLA->header.type == NLA_CONNECTIVITY){
-                                                log_debug("NLA Connectivity type: %d", pNLA->data.connectivity.type);
+						log_debug("NLA Connectivity type: %d", pNLA->data.connectivity.type);
 						NetworkStateArray[iterator] = pNLA->data.connectivity.type;
 						iterator++;
 					}
