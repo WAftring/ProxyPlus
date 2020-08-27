@@ -4,49 +4,43 @@
 #include "ini.h"
 
 FILE* InitialSetup();
-void ParseLogLevel(const char* LogLevel);
+int ParseLogLevel(const char* LogLevel);
 
 int main(){
-        FILE* pFile; 
+	FILE* pFile; 
 	ini_t *config;
-        char* LogLevel;
-        char* StateCheck;
-        
-        pFile = InitialSetup();
+	int LogInt = LOG_INFO;
+
+	pFile = InitialSetup();
+
+	config = ini_load("config.ini");
+
+	if(config == NULL)
+		return -1;
+
+	const char* LogStr = ini_get(config, "general", "log-level");
+	LogInt = ParseLogLevel(LogStr);
+
 	if(pFile == NULL){
 		return -1;
 	}
-        else{
-            log_add_fp(pFile, LOG_INFO);
-            log_set_quiet(true);
-            log_info("Logger started");
-        }
-	config = ini_load("config.ini");
+	log_add_fp(pFile, LogInt);
+//	log_set_quiet(true);
+	log_info("Logger started");
 
-	if(config == NULL){
-                log_fatal("Failed to read config file");
-		return -1;
-	}
+	//Reading the general config
+	const char* StateCheck = ini_get(config, "general", "watch");
 
-        //Reading the general config
-        LogLevel = (char*)malloc(sizeof(char) * strlen(ini_get(config, "general", "log-level")));
-        ini_sget(config, "general", "log-level", "%s", LogLevel);
-        ParseLogLevel(LogLevel);
-        StateCheck = (char*)malloc(sizeof(char) * strlen(ini_get(config, "general", "watch")));
-        ini_sget(config, "general", "watch", "%s", StateCheck);
-        
-        //At some point this will need to be turned into a function
-        if(strcmp(StateCheck, "NLA") == 0)
-            NLANotify();	
-        else
-            log_fatal("No proxy procedure matched");
+	//At some point this will need to be turned into a function
+	if(strcmp(StateCheck, "NLA") == 0)
+	    NLANotify();	
+	else
+	    log_fatal("No proxy procedure matched");
 
-        if(StateCheck)
-            free(StateCheck);
 	if(config)
 		ini_free(config);
 
-        fclose(pFile);
+	fclose(pFile);
 
 	return 0;
 }
@@ -60,8 +54,8 @@ FILE* InitialSetup(){
 	char dir[_MAX_DIR];
 	char fname[_MAX_FNAME];
 	char ext[_MAX_EXT];
-        FILE* pTemp;
-        errno_t err;
+	FILE* pTemp;
+	errno_t err;
 
 	if(GetModuleFileNameA(NULL, buffer, MAX_PATH) == 0){
 		printf("Unable to determine path.\nCan't read config.\n");
@@ -77,20 +71,19 @@ FILE* InitialSetup(){
 		return NULL;
 	}
 
-        err = fopen_s(&pTemp, "ProxyPlus.log", "a");
+	err = fopen_s(&pTemp, "ProxyPlus.log", "a");
 
-        if(err != 0)
-            return NULL;
+	if(err != 0)
+	    return NULL;
 
 	return pTemp;
 }
 
-void ParseLogLevel(const char* LogLevel){
+int ParseLogLevel(const char* LogLevel){
 
-	//@TODO This doesn't work right now...
     if(strcmp(LogLevel, "DEBUG") == 0)
-        log_set_level(LOG_DEBUG);
+	return LOG_DEBUG;
     else
-        log_set_level(LOG_INFO);
+	return LOG_INFO;
 
 }
