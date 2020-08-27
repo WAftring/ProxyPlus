@@ -4,23 +4,23 @@
 
 #pragma comment(lib, "wininet.lib")
 
-int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable){
+int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const char* bypass, int enable){
 
-        log_debug("Entering SetInternetProxy.c");	
+	log_debug("Entering SetInternetProxy.c");	
 	int OptionCount = 1;
 	INTERNET_PER_CONN_OPTION_LIST list;
 	DWORD dwSize = sizeof(list);
 
 	if(WPAD){
-                log_debug("WPAD defined");
+		log_debug("WPAD defined");
 		OptionCount++;
         }
 	if(acu){
-                log_debug("Auto config URL defined");
+		log_debug("Auto config URL defined");
 		OptionCount++;
         }
 	if(proxy){
-                log_debug("Manual proxy defined");
+		log_debug("Manual proxy defined");
 		OptionCount++;
         }
 
@@ -32,29 +32,28 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 	
 	// This section needs to be cleaned up because it is a bug waiting to happen...
 	if(enable){
-	        log_info("Enabling WinInet proxy");	
+		log_info("Enabling WinInet proxy");	
 		// Enable WPAD
 		if(WPAD)
 			Option[0].Value.dwValue |= PROXY_TYPE_AUTO_DETECT;
 		// Enable ACU
-		if(acu)
+		if(acu){
 			Option[0].Value.dwValue |=  PROXY_TYPE_AUTO_PROXY_URL;
+			// Set ACU
+			Option[3].dwOption = INTERNET_PER_CONN_AUTOCONFIG_URL;
+			Option[3].Value.pszValue = TEXT(acu);
+		}
+
 		// Enable Proxy
-		if(proxy)
+		if(proxy){
 			Option[0].Value.dwValue |= PROXY_TYPE_PROXY;
-
-		// Set Manual Proxy
-		Option[1].dwOption = INTERNET_PER_CONN_PROXY_SERVER;
-		Option[1].Value.pszValue = TEXT(proxy);
-
-		// Set bypass-list
-		Option[2].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
-		Option[2].Value.pszValue = TEXT(bypass);
-
-		// Set ACU
-		Option[3].dwOption = INTERNET_PER_CONN_AUTOCONFIG_URL;
-		Option[3].Value.pszValue = TEXT(acu);
-
+			// Set Manual Proxy
+			Option[1].dwOption = INTERNET_PER_CONN_PROXY_SERVER;
+			Option[1].Value.pszValue = TEXT(proxy);
+			// Set bypass-list
+			Option[2].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
+			Option[2].Value.pszValue = TEXT(bypass);
+		}
 	}
 
         else
@@ -66,16 +65,14 @@ int SetInternetProxy(int WPAD, char* acu, char* proxy, char* bypass, int enable)
 	list.dwOptionError = 0;
 	list.pOptions = Option;
 
-	//While testing NLA funtctionality	
 	if(!InternetSetOptionA(NULL, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwSize)){
-                log_error("Failed to set proxy with error: %lu", GetLastError());
+		log_error("Failed to set proxy with error: %lu", GetLastError());
 		if(Option)
 			free(Option);
 		return -1;	
 	}
 
-	//@TODO For some reason this isn't freeing our memory...
-	//And this is causing memory issues down the line
+
 	free(Option);
 	Option = NULL;
 	return 1;
