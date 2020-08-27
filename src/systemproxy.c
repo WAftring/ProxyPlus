@@ -28,9 +28,9 @@ int SetSystemProxy(char* proxy, char* bypass, int enable){
 		MultiByteToWideChar(CP_UTF8, 0, bypass, -1, BypassBuffer, wchar_num);
 		SetProxy.lpszProxyBypass = BypassBuffer;
 
-		free(ProxyBuffer);
-		free(BypassBuffer);
 	}
+	else 
+		SetProxy.dwAccessType = WINHTTP_ACCESS_TYPE_NO_PROXY;
 
 	if(!WinHttpSetDefaultProxyConfiguration(&SetProxy)){
                 log_error("Failed to set WinHttp proxy with: %lu", GetLastError());
@@ -38,10 +38,13 @@ int SetSystemProxy(char* proxy, char* bypass, int enable){
 	}
 	else{
 		WinHttpGetDefaultProxyConfiguration(&SetProxy);
-                log_debug("WinHttp proxy set to\n\tAccess-Type: %s\n\tProxy-String: %s\n\tProxy-bypass: %s", 
-                        SetProxy.dwAccessType, 
-                        SetProxy.lpszProxy, 
-                        SetProxy.lpszProxyBypass);
+                log_debug("WinHttp proxy set to %s", proxy);
+                        
+	}
+
+	if(enable){
+		free(ProxyBuffer);
+		free(BypassBuffer);
 	}
 
 	return retval;
