@@ -25,7 +25,7 @@ int SetProxyNLA(int *networkstatearray){
 		proxyconfig = ini_load("config.ini");
 
 		if(proxyconfig == NULL){
-                        log_fatal("Failed to load config file");
+			log_fatal("Failed to load config file");
 			return -1;
 		}
 
@@ -50,7 +50,7 @@ int SetProxyNLA(int *networkstatearray){
 		if(WinHttp){
 			log_info("Setting WinHttp proxy");
 			//SetSystemProxy(systemproxy, systembypass, 1);	
-                }
+		}
 
 	}
 	else {

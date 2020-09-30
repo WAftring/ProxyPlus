@@ -14,15 +14,15 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 	if(WPAD){
 		log_debug("WPAD defined");
 		OptionCount++;
-        }
+	}
 	if(acu){
 		log_debug("Auto config URL defined");
 		OptionCount++;
-        }
+	}
 	if(proxy){
 		log_debug("Manual proxy defined");
 		OptionCount++;
-        }
+	}
 
 	INTERNET_PER_CONN_OPTION *Option = (INTERNET_PER_CONN_OPTION*)malloc(OptionCount * 
 			sizeof(INTERNET_PER_CONN_OPTION));
@@ -56,8 +56,8 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 		}
 	}
 
-        else
-            log_info("Disabling WinInet proxy");
+	else
+		log_info("Disabling WinInet proxy");
 
 	list.dwSize = sizeof(list);
 	list.pszConnection = NULL;

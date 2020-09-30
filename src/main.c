@@ -33,9 +33,9 @@ int main(){
 
 	//At some point this will need to be turned into a function
 	if(strcmp(StateCheck, "NLA") == 0)
-	    NLANotify();	
+		NLANotify();
 	else
-	    log_fatal("No proxy procedure matched");
+		log_fatal("No proxy procedure matched");
 
 	if(config)
 		ini_free(config);
@@ -74,16 +74,16 @@ FILE* InitialSetup(){
 	err = fopen_s(&pTemp, "ProxyPlus.log", "a");
 
 	if(err != 0)
-	    return NULL;
+		return NULL;
 
 	return pTemp;
 }
 
 int ParseLogLevel(const char* LogLevel){
 
-    if(strcmp(LogLevel, "DEBUG") == 0)
-	return LOG_DEBUG;
-    else
-	return LOG_INFO;
+	if(strcmp(LogLevel, "DEBUG") == 0)
+		return LOG_DEBUG;
+	else
+		return LOG_INFO;
 
 }

@@ -33,13 +33,12 @@ int SetSystemProxy(char* proxy, char* bypass, int enable){
 		SetProxy.dwAccessType = WINHTTP_ACCESS_TYPE_NO_PROXY;
 
 	if(!WinHttpSetDefaultProxyConfiguration(&SetProxy)){
-                log_error("Failed to set WinHttp proxy with: %lu", GetLastError());
+		log_error("Failed to set WinHttp proxy with: %lu", GetLastError());
 		retval = -1;
 	}
 	else{
 		WinHttpGetDefaultProxyConfiguration(&SetProxy);
-                log_debug("WinHttp proxy set to %s", proxy);
-                        
+		log_debug("WinHttp proxy set to %s", proxy);
 	}
 
 	if(enable){
