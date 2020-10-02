@@ -41,7 +41,7 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 			Option[0].Value.dwValue |=  PROXY_TYPE_AUTO_PROXY_URL;
 			// Set ACU
 			Option[3].dwOption = INTERNET_PER_CONN_AUTOCONFIG_URL;
-			Option[3].Value.pszValue = TEXT(acu);
+			Option[3].Value.pszValue = (LPSTR)TEXT(acu);
 		}
 
 		// Enable Proxy
@@ -49,10 +49,10 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 			Option[0].Value.dwValue |= PROXY_TYPE_PROXY;
 			// Set Manual Proxy
 			Option[1].dwOption = INTERNET_PER_CONN_PROXY_SERVER;
-			Option[1].Value.pszValue = TEXT(proxy);
+			Option[1].Value.pszValue = (LPSTR)TEXT(proxy);
 			// Set bypass-list
 			Option[2].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
-			Option[2].Value.pszValue = TEXT(bypass);
+			Option[2].Value.pszValue = (LPSTR)TEXT(bypass);
 		}
 	}
 

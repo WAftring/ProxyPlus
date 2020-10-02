@@ -8,6 +8,7 @@
 #include "proxy.h"
 
 #define wsaerrno WSAGetLastError()
+#define MAX_ADAPTER 12
 // https://docs.microsoft.com/en-us/previous-versions//aa364726(v=vs.85)?redirectedfrom=MSDN
 //
 typedef struct {
@@ -16,8 +17,16 @@ typedef struct {
 	int active;
 } NetAdapter;
 
-int GetInterfaceCount();
-int GUIDExists(const char* adapterGUID, NetAdapter* NetworkStateArray);
+
+typedef struct dynamic_vector {
+	NetAdapter* data;
+	size_t limit;
+	size_t current;
+} nvector;
+
+void UpdateVector(nvector* vNetAdapter, NetAdapter* newAdapter, int bAdd);
+void UpdateAdapterVector(nvector* vNetAdapter, char* adapter_guid, const int* domain_connectivity, int bAdded);
+
 int NLANotify(){
 
 	// Thinking how to implement this...
@@ -42,8 +51,7 @@ int NLANotify(){
 	PNLA_BLOB pNLA;
 	DWORD Offset = 0;
 	DWORD lpcbBytesReturned = 0;
-	NetAdapter *NetworkStateArray;
-	int NumAdapters = 0;
+	nvector vNetAdapter;
 	int iterator = 0;
 	int domainTemp = 0;
 	int StateChanged = 1;
@@ -75,17 +83,18 @@ int NLANotify(){
 	}
 
 	// This is for the inital adapter number
-	NumAdapters = GetInterfaceCount();
-	if(NumAdapters < 1)
-		return -1;
+	//NumAdapters = GetInterfaceCount();
+	//if(NumAdapters < 1)
+	//	return -1;
 
-	NetworkStateArray = (NetAdapter*)calloc(NumAdapters, sizeof(NetAdapter));
+	vNetAdapter.data = (NetAdapter*)calloc(1, sizeof(NetAdapter));
+	vNetAdapter.limit = 1;
+	vNetAdapter.current = 0;
 
 	while(1){
 
 		memset(QuerySet, 0, sizeof(*QuerySet));
 		BufferSize = sizeof(buff);
-		// @TODO This function needs an overhaul...
 		// If we detect a change it will tell us
 		// If something was added or removed
 		// This means I need to know what is left...
@@ -97,8 +106,6 @@ int NLANotify(){
 				if(StateChanged){
 					log_debug("Entering SetProxyNLA");
 //					SetProxyNLA(NetworkStateArray);
-					if(NetworkStateArray)
-						free(NetworkStateArray);
 				}
 
 				// For single-threaded applications, a typical method to use the WSANSPIoctl function
@@ -106,7 +113,8 @@ int NLANotify(){
 				// set to SIO_NSP_NOTIFY_CHANGE with no completion routine
 				// (the lpCompletion parameter set to NULL) after every WSALookupServiceNext
 				// function call to make sure the query data is still valid. If the data becomes invalid,
-				// call the WSALookupServiceEndfunction to close the query handle. Call the WSALookupServiceBegin function to retrieve a new query handle and begin the query again.
+				// call the WSALookupServiceEndfunction to close the query handle.
+				// Call the WSALookupServiceBegin function to retrieve a new query handle and begin the query again.
 				//
 				// This will block until a network state change occurs
 				if(WSANSPIoctl(
@@ -123,12 +131,12 @@ int NLANotify(){
 				iterator = 0;
 			}
 			else if(wsaerrno == WSA_INVALID_HANDLE){
-				log_debug("WSALookupServiceInvalid handle");
+				log_fatal("WSALookupServiceInvalid handle");
 				return -1;
 			}
 
 			else{
-				log_debug("WSALookupService unexpected error: %d", wsaerrno);
+				log_fatal("WSALookupService unexpected error: %d", wsaerrno);
 				return -1;
 			}
 		}
@@ -136,7 +144,6 @@ int NLANotify(){
 		// Additionally based in the WSAQUERYSET we need
 		// to check the dwOutputFlag for if the item was
 		// added or removed
-		// TODO Working on fixing up this section at the bottem
 		else{
 			if(StateChanged == 0){
 				StateChanged = 1;
@@ -146,30 +153,16 @@ int NLANotify(){
 			if(QuerySet->lpBlob != NULL){
 				do
 				{
-					//@TODO This needs to be cleaned up...
 					pNLA = (PNLA_BLOB) &(QuerySet->lpBlob->pBlobData[Offset]);
 					if(pNLA->header.type == NLA_INTERFACE){
-						printf("%d\n", pNLA->data.interfaceData.dwType);
-						printf("%d\n", pNLA->data.interfaceData.dwSpeed);
+						log_debug("NLA Adapter Name: %s", pNLA->data.interfaceData.adapterName);
 						printf("%s\n", pNLA->data.interfaceData.adapterName);
-						//@TODO This doesn't account for more adapters than we allocate
-						// This is a recipe for a mess
-						if(GUIDExists(pNLA->data.interfaceData.adapterName, NetworkStateArray)){
-							memcpy_s(NetworkStateArray[iterator].adapter_guid,
-									sizeof(char[40]),
-									pNLA->data.interfaceData.adapterName,
-									strlen(pNLA->data.interfaceData.adapterName));
-							NetworkStateArray[iterator].domain_connectivity = domainTemp;
+						UpdateAdapterVector(&vNetAdapter,
+											pNLA->data.interfaceData.adapterName,
+											&domainTemp,
+											QuerySet->dwOutputFlags);
 						}
 
-
-						if(QuerySet->dwOutputFlags == RESULT_IS_ADDED){
-							NetworkStateArray[iterator].active = 1;
-						}
-						else
-							NetworkStateArray[iterator].active = 0;
-						iterator++;
-					}
 					if(pNLA->header.type == NLA_CONNECTIVITY){
 						log_debug("NLA Connectivity type: %d", pNLA->data.connectivity.type);
 						domainTemp = pNLA->data.connectivity.type;
@@ -182,47 +175,53 @@ int NLANotify(){
 		}
 	}
 
-	if(NetworkStateArray)
-		free(NetworkStateArray);
+	//@TODO Turn this into freeing the actual vector instead
+//	if(NetworkStateArray)
+//		free(NetworkStateArray);
 
 	return 0;
 }
 
+void UpdateAdapterVector(nvector* vNetAdapter, char* adapter_guid, const int* domain_connectivity, int bAdded){
 
-int GetInterfaceCount(){
-	//This function may be unnecessary?
-	PIP_INTERFACE_INFO pInfo = NULL;
-	ULONG ulInterfaceBuffer;
-	int RetVal = -1;
+	int bFound = 0;
+	int location = 0;
+	NetAdapter tempAdapter;
 
-	if(GetInterfaceInfo(
-			NULL,
-			&ulInterfaceBuffer) == ERROR_INSUFFICIENT_BUFFER){
-		pInfo = (IP_INTERFACE_INFO*)malloc(ulInterfaceBuffer);
-		if(GetInterfaceInfo(
-						pInfo,
-						&ulInterfaceBuffer) == NO_ERROR){
+	memcpy_s(tempAdapter.adapter_guid, sizeof(tempAdapter.adapter_guid), adapter_guid, strlen(adapter_guid));
+	tempAdapter.domain_connectivity = *domain_connectivity;
+	tempAdapter.active = 0;
 
-			RetVal = pInfo->NumAdapters;
+	if(bAdded == RESULT_IS_ADDED)
+		tempAdapter.active = 1;
+
+	for (int i = 0; i < vNetAdapter->current; i++) {
+		if(strcmp(vNetAdapter->data[i].adapter_guid,adapter_guid) == 0){
+			bFound = 1;
+			location = i;
+			break;
 		}
 	}
+
+	if(bFound){
+		vNetAdapter->data[location] = tempAdapter;
+	}
 	else
-			log_error("GetInterfaceInfo failed with %lu", GetLastError());
+		UpdateVector(vNetAdapter, &tempAdapter, bAdded);
 
-	if(pInfo)
-		free(pInfo);
-
-	return RetVal;
 }
 
-int GUIDExists(const char* adapterGUID, NetAdapter* NetworkStateArray){
+void UpdateVector(nvector* vNetAdapter, NetAdapter* newAdapter, int bAdd){
 
-	//@TODO This is busted
-	for (int i = 0; i < sizeof(NetworkStateArray)/sizeof(NetAdapter); i++) {
-		if(NetworkStateArray[i].adapter_guid == adapterGUID)
-			return 0;
+	if(bAdd){
+		vNetAdapter->data[vNetAdapter->current] = *newAdapter;
+		vNetAdapter->current++;
+	}
+	else{
+	//@TODO Think of some clever logic for removing the un-needed adapter.
 	}
 
-	return 1;
+	if(vNetAdapter->current == vNetAdapter->limit)
+		vNetAdapter->data = (NetAdapter*)realloc(vNetAdapter->data, (vNetAdapter->limit + 3) * sizeof(NetAdapter));
 
 }
