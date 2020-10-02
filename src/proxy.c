@@ -7,7 +7,7 @@
 #include "internetproxy.h"
 
 
-int SetProxyNLA(int *networkstatearray){
+int SetProxyNLA(int domain_status){
 
 	int inDomain = 0;
 	ini_t *proxyconfig;	
@@ -15,12 +15,7 @@ int SetProxyNLA(int *networkstatearray){
 	int WinHttp = 0;
 
 	// We need to check the array of the number of adapters and the connectivity state they are in	
-	for(int i = 0; i <= sizeof(networkstatearray)/sizeof(int); i++){
-		if(networkstatearray[i] == NETWORK_MANAGED)
-			inDomain = 1;
-	}
-
-	if(inDomain){
+	if(domain_status == NETWORK_MANAGED){
 
 		proxyconfig = ini_load("config.ini");
 
@@ -44,12 +39,12 @@ int SetProxyNLA(int *networkstatearray){
 
 		if(Inet){
 			log_info("Setting WinInet proxy");
-			//SetInternetProxy(WPAD, acu, inetproxy, inetbypass, 1);	
+			SetInternetProxy(WPAD, acu, inetproxy, inetbypass, 1);
 		}
 
 		if(WinHttp){
 			log_info("Setting WinHttp proxy");
-			//SetSystemProxy(systemproxy, systembypass, 1);	
+			SetSystemProxy(systemproxy, systembypass, 1);
 		}
 
 	}

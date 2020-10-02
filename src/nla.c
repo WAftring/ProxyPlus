@@ -9,8 +9,7 @@
 
 #define wsaerrno WSAGetLastError()
 #define MAX_ADAPTER 12
-// https://docs.microsoft.com/en-us/previous-versions//aa364726(v=vs.85)?redirectedfrom=MSDN
-//
+
 typedef struct {
 	char adapter_guid[40];
 	int domain_connectivity;
@@ -26,11 +25,9 @@ typedef struct dynamic_vector {
 
 void UpdateVector(nvector* vNetAdapter, NetAdapter* newAdapter, int bAdd);
 void UpdateAdapterVector(nvector* vNetAdapter, char* adapter_guid, const int* domain_connectivity, int bAdded);
-
+int GetSignificantStatus(nvector* vNetAdapter);
 int NLANotify(){
 
-	// Thinking how to implement this...
-	//
 	// We need to Call WSALookupServiceBegin to get our NLA Handle
 	// https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-wsalookupservicebegina
 	//
@@ -82,11 +79,6 @@ int NLANotify(){
 		return -1;
 	}
 
-	// This is for the inital adapter number
-	//NumAdapters = GetInterfaceCount();
-	//if(NumAdapters < 1)
-	//	return -1;
-
 	vNetAdapter.data = (NetAdapter*)calloc(1, sizeof(NetAdapter));
 	vNetAdapter.limit = 1;
 	vNetAdapter.current = 0;
@@ -105,7 +97,7 @@ int NLANotify(){
 				log_debug("No more data found. Waiting for state change");
 				if(StateChanged){
 					log_debug("Entering SetProxyNLA");
-//					SetProxyNLA(NetworkStateArray);
+					SetProxyNLA(GetSignificantStatus(&vNetAdapter));
 				}
 
 				// For single-threaded applications, a typical method to use the WSANSPIoctl function
@@ -175,10 +167,8 @@ int NLANotify(){
 		}
 	}
 
-	//@TODO Turn this into freeing the actual vector instead
-//	if(NetworkStateArray)
-//		free(NetworkStateArray);
-
+	if(vNetAdapter.data)
+		free(vNetAdapter.data);
 	return 0;
 }
 
@@ -217,11 +207,18 @@ void UpdateVector(nvector* vNetAdapter, NetAdapter* newAdapter, int bAdd){
 		vNetAdapter->data[vNetAdapter->current] = *newAdapter;
 		vNetAdapter->current++;
 	}
-	else{
-	//@TODO Think of some clever logic for removing the un-needed adapter.
-	}
 
 	if(vNetAdapter->current == vNetAdapter->limit)
 		vNetAdapter->data = (NetAdapter*)realloc(vNetAdapter->data, (vNetAdapter->limit + 3) * sizeof(NetAdapter));
 
+}
+
+int GetSignificantStatus(nvector* vNetAdapter){
+	int sig_status = 0;
+
+	for (int i = 0; i < vNetAdapter->current; i++)
+		if (vNetAdapter->data[i].domain_connectivity == NETWORK_MANAGED)
+			sig_status = NETWORK_MANAGED;
+
+	return sig_status;
 }

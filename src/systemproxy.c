@@ -4,7 +4,7 @@
 
 #pragma comment(lib, "winhttp.lib")
 
-int SetSystemProxy(char* proxy, char* bypass, int enable){
+int SetSystemProxy(const  char* proxy, const char* bypass, int enable){
 
 	int wchar_num = 0;
 	wchar_t* ProxyBuffer = NULL;
