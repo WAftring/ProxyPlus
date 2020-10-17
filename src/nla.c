@@ -145,6 +145,8 @@ int NLANotify(){
 			if(QuerySet->lpBlob != NULL){
 				do
 				{
+					//TODO I should probably add some error handling for
+					// if there are no adapters present...
 					pNLA = (PNLA_BLOB) &(QuerySet->lpBlob->pBlobData[Offset]);
 					if(pNLA->header.type == NLA_INTERFACE){
 						log_debug("NLA Adapter Name: %s", pNLA->data.interfaceData.adapterName);
@@ -217,7 +219,7 @@ int GetSignificantStatus(nvector* vNetAdapter){
 	int sig_status = 0;
 
 	for (int i = 0; i < vNetAdapter->current; i++)
-		if (vNetAdapter->data[i].domain_connectivity == NETWORK_MANAGED)
+		if (vNetAdapter->data[i].domain_connectivity == NETWORK_MANAGED && vNetAdapter->data[i].active == 1)
 			sig_status = NETWORK_MANAGED;
 
 	return sig_status;
