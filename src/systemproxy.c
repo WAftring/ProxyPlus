@@ -29,8 +29,11 @@ int SetSystemProxy(const  char* proxy, const char* bypass, int enable){
 		SetProxy.lpszProxyBypass = BypassBuffer;
 
 	}
-	else 
+
+	else{
+		//TODO This is leading to an INVALID_PARAMETER argument
 		SetProxy.dwAccessType = WINHTTP_ACCESS_TYPE_NO_PROXY;
+	}
 
 	if(!WinHttpSetDefaultProxyConfiguration(&SetProxy)){
 		log_error("Failed to set WinHttp proxy with: %lu", GetLastError());

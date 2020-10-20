@@ -95,7 +95,7 @@ int NLANotify(){
 			// This just means we don't have new data
 			if(wsaerrno == WSA_E_NO_MORE){
 				log_debug("No more data found. Waiting for state change");
-				if(StateChanged){
+				if(StateChanged && vNetAdapter.current != 0){
 					log_debug("Entering SetProxyNLA");
 					SetProxyNLA(GetSignificantStatus(&vNetAdapter));
 				}
@@ -145,19 +145,17 @@ int NLANotify(){
 			if(QuerySet->lpBlob != NULL){
 				do
 				{
-					//TODO I should probably add some error handling for
-					// if there are no adapters present...
+					log_debug("Query Result: %lu", QuerySet->dwOutputFlags);
 					pNLA = (PNLA_BLOB) &(QuerySet->lpBlob->pBlobData[Offset]);
 					if(pNLA->header.type == NLA_INTERFACE){
 						log_debug("NLA Adapter Name: %s", pNLA->data.interfaceData.adapterName);
-						printf("%s\n", pNLA->data.interfaceData.adapterName);
 						UpdateAdapterVector(&vNetAdapter,
 											pNLA->data.interfaceData.adapterName,
 											&domainTemp,
 											QuerySet->dwOutputFlags);
 						}
 
-					if(pNLA->header.type == NLA_CONNECTIVITY){
+					else if(pNLA->header.type == NLA_CONNECTIVITY){
 						log_debug("NLA Connectivity type: %d", pNLA->data.connectivity.type);
 						domainTemp = pNLA->data.connectivity.type;
 					}
