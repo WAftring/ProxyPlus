@@ -46,6 +46,7 @@ int SetProxyNLA(int domain_status){
 			SetSystemProxy(systemproxy, systembypass, 1);
 		}
 
+		ini_free(proxyconfig);
 	}
 	else {
 		log_info("Disabling WinInet proxy");
@@ -54,7 +55,6 @@ int SetProxyNLA(int domain_status){
 		DisableSystemProxy();
 	}
 
-	ini_free(proxyconfig);
 	return 1;
 }
 
