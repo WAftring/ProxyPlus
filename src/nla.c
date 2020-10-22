@@ -94,7 +94,6 @@ int NLANotify(){
 
 			// This just means we don't have new data
 			if(wsaerrno == WSA_E_NO_MORE){
-				log_info("No more data found. Waiting for state change");
 				if(StateChanged && vNetAdapter.current != 0){
 					log_debug("Entering SetProxyNLA");
 					SetProxyNLA(GetSignificantStatus(&vNetAdapter));
@@ -109,8 +108,9 @@ int NLANotify(){
 				// Call the WSALookupServiceBegin function to retrieve a new query handle and begin the query again.
 				//
 				// This will block until a network state change occurs
-				// BUG 1a This right no runs too fast.
 				// It will start processing before the domain connectivity can be determined...
+
+				log_info("No more data found. Waiting for state change");
 				if(WSANSPIoctl(
 				  hNLA,
 				  SIO_NSP_NOTIFY_CHANGE,
@@ -120,8 +120,10 @@ int NLANotify(){
 				) != NO_ERROR){
 					log_error("Failed to set the WSANSPIoctl: %d", wsaerrno);
 				}
-
-				// FIX 1a Sleeping to allow for NLA domain connectivity
+				log_info("NLA indicated state change");
+				if(lpcbBytesReturned)
+					free(&lpcbBytesReturned);
+				// We need this to give the NLA time to contact a DC
 				log_debug("Starting sleep for domain connectivity");
 				Sleep(3000); 
 
@@ -147,11 +149,10 @@ int NLANotify(){
 				StateChanged = 1;
 			}
 
-			log_info("Network name: %s", QuerySet->lpszServiceInstanceName);
 			if(QuerySet->lpBlob != NULL){
 				do
 				{
-					log_info("Query Result: %lu", QuerySet->dwOutputFlags);
+					log_debug("Query Result: %lu", QuerySet->dwOutputFlags);
 					pNLA = (PNLA_BLOB) &(QuerySet->lpBlob->pBlobData[Offset]);
 					if(pNLA->header.type == NLA_INTERFACE){
 						log_info("NLA Adapter Name: %s", pNLA->data.interfaceData.adapterName);
