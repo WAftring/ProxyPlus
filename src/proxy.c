@@ -9,8 +9,7 @@
 
 int SetProxyNLA(int domain_status){
 
-	int inDomain = 0;
-	ini_t *proxyconfig;	
+	ini_t *proxyconfig = NULL;
 	int Inet = 0;
 	int WinHttp = 0;
 
@@ -55,6 +54,7 @@ int SetProxyNLA(int domain_status){
 		DisableSystemProxy();
 	}
 
+	ini_free(proxyconfig);
 	return 1;
 }
 

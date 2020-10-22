@@ -6,21 +6,20 @@
 
 int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const char* bypass, int enable){
 
-	log_debug("Entering SetInternetProxy.c");	
 	int OptionCount = 1;
 	INTERNET_PER_CONN_OPTION_LIST list;
 	DWORD dwSize = sizeof(list);
 
 	if(WPAD){
-		log_debug("WPAD defined");
+		log_info("WPAD defined");
 		OptionCount++;
 	}
 	if(acu){
-		log_debug("Auto config URL defined");
+		log_info("Auto config URL defined");
 		OptionCount++;
 	}
 	if(proxy){
-		log_debug("Manual proxy defined");
+		log_info("Manual proxy defined");
 		OptionCount++;
 	}
 
@@ -30,7 +29,7 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 	Option[0].dwOption = INTERNET_PER_CONN_FLAGS;
 	Option[0].Value.dwValue = PROXY_TYPE_DIRECT;
 	
-	// This section needs to be cleaned up because it is a bug waiting to happen...
+	// BUG This section needs to be cleaned up because it is a bug waiting to happen...
 	if(enable){
 		log_info("Enabling WinInet proxy");	
 		// Enable WPAD

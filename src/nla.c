@@ -55,7 +55,7 @@ int NLANotify(){
 
 	// Starting WSA
 	if(WSAStartup(MAKEWORD(2,2),&WSD) != 0){
-		log_error("Failed to start Winsock with: %d", wsaerrno);
+		log_fatal("Failed to start Winsock with: %d", wsaerrno);
 		return -1;
 	}
 
@@ -94,7 +94,7 @@ int NLANotify(){
 
 			// This just means we don't have new data
 			if(wsaerrno == WSA_E_NO_MORE){
-				log_debug("No more data found. Waiting for state change");
+				log_info("No more data found. Waiting for state change");
 				if(StateChanged && vNetAdapter.current != 0){
 					log_debug("Entering SetProxyNLA");
 					SetProxyNLA(GetSignificantStatus(&vNetAdapter));
@@ -109,6 +109,8 @@ int NLANotify(){
 				// Call the WSALookupServiceBegin function to retrieve a new query handle and begin the query again.
 				//
 				// This will block until a network state change occurs
+				// BUG 1a This right no runs too fast.
+				// It will start processing before the domain connectivity can be determined...
 				if(WSANSPIoctl(
 				  hNLA,
 				  SIO_NSP_NOTIFY_CHANGE,
@@ -118,6 +120,10 @@ int NLANotify(){
 				) != NO_ERROR){
 					log_error("Failed to set the WSANSPIoctl: %d", wsaerrno);
 				}
+
+				// FIX 1a Sleeping to allow for NLA domain connectivity
+				log_debug("Starting sleep for domain connectivity");
+				Sleep(3000); 
 
 				StateChanged = 0;
 				iterator = 0;
@@ -141,14 +147,14 @@ int NLANotify(){
 				StateChanged = 1;
 			}
 
-			log_debug("Network name: %s", QuerySet->lpszServiceInstanceName);
+			log_info("Network name: %s", QuerySet->lpszServiceInstanceName);
 			if(QuerySet->lpBlob != NULL){
 				do
 				{
-					log_debug("Query Result: %lu", QuerySet->dwOutputFlags);
+					log_info("Query Result: %lu", QuerySet->dwOutputFlags);
 					pNLA = (PNLA_BLOB) &(QuerySet->lpBlob->pBlobData[Offset]);
 					if(pNLA->header.type == NLA_INTERFACE){
-						log_debug("NLA Adapter Name: %s", pNLA->data.interfaceData.adapterName);
+						log_info("NLA Adapter Name: %s", pNLA->data.interfaceData.adapterName);
 						UpdateAdapterVector(&vNetAdapter,
 											pNLA->data.interfaceData.adapterName,
 											&domainTemp,
@@ -156,7 +162,7 @@ int NLANotify(){
 						}
 
 					else if(pNLA->header.type == NLA_CONNECTIVITY){
-						log_debug("NLA Connectivity type: %d", pNLA->data.connectivity.type);
+						log_info("NLA Connectivity type: %d", pNLA->data.connectivity.type);
 						domainTemp = pNLA->data.connectivity.type;
 					}
 					Offset += pNLA->header.nextOffset;
@@ -182,8 +188,9 @@ void UpdateAdapterVector(nvector* vNetAdapter, char* adapter_guid, const int* do
 	tempAdapter.domain_connectivity = *domain_connectivity;
 	tempAdapter.active = 0;
 
-	if(bAdded == RESULT_IS_ADDED)
+	if(bAdded == RESULT_IS_ADDED || bAdded == RESULT_IS_CHANGED) //Adapters can be added, removed or deleted
 		tempAdapter.active = 1;
+
 
 	for (int i = 0; i < vNetAdapter->current; i++) {
 		if(strcmp(vNetAdapter->data[i].adapter_guid,adapter_guid) == 0){

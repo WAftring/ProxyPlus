@@ -4,16 +4,14 @@
 
 #pragma comment(lib, "winhttp.lib")
 
-int SetSystemProxy(const  char* proxy, const char* bypass, int enable){
+int SetSystemProxy(const char* proxy, const char* bypass, int enable){
 
 	int wchar_num = 0;
 	wchar_t* ProxyBuffer = NULL;
 	wchar_t* BypassBuffer = NULL;
 	int retval = 0;
 
-	WINHTTP_PROXY_INFO SetProxy;
-	
-	SetProxy.dwAccessType = WINHTTP_ACCESS_TYPE_NO_PROXY;
+	WINHTTP_PROXY_INFO SetProxy = {WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL};
 
 	if(enable){
 
@@ -30,24 +28,17 @@ int SetSystemProxy(const  char* proxy, const char* bypass, int enable){
 
 	}
 
-	else{
-		//TODO This is leading to an INVALID_PARAMETER argument
-		SetProxy.dwAccessType = WINHTTP_ACCESS_TYPE_NO_PROXY;
-	}
-
 	if(!WinHttpSetDefaultProxyConfiguration(&SetProxy)){
 		log_error("Failed to set WinHttp proxy with: %lu", GetLastError());
 		retval = -1;
 	}
 	else{
 		WinHttpGetDefaultProxyConfiguration(&SetProxy);
-		log_debug("WinHttp proxy set to %s", proxy);
+		log_info("WinHttp proxy set to %s", proxy);
 	}
 
-	if(enable){
-		free(ProxyBuffer);
-		free(BypassBuffer);
-	}
+	free(ProxyBuffer);
+	free(BypassBuffer);
 
 	return retval;
 }

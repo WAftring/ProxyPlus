@@ -2,7 +2,7 @@
 #include <string.h>
 #include "nla.h"
 #include "ini.h"
-
+//TODO Update the log settings so that they make sense...
 FILE* InitialSetup();
 int ParseLogLevel(const char* LogLevel);
 
