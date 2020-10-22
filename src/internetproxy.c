@@ -6,13 +6,13 @@
 
 int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const char* bypass, int enable){
 
+	int CurrentOption = 1;
 	int OptionCount = 1;
 	INTERNET_PER_CONN_OPTION_LIST list;
 	DWORD dwSize = sizeof(list);
 
 	if(WPAD){
 		log_info("WPAD defined");
-		OptionCount++;
 	}
 	if(acu){
 		log_info("Auto config URL defined");
@@ -21,6 +21,7 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 	if(proxy){
 		log_info("Manual proxy defined");
 		OptionCount++;
+		OptionCount++; //Adding an additional option count for the bypass list
 	}
 
 	INTERNET_PER_CONN_OPTION *Option = (INTERNET_PER_CONN_OPTION*)malloc(OptionCount * 
@@ -29,7 +30,6 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 	Option[0].dwOption = INTERNET_PER_CONN_FLAGS;
 	Option[0].Value.dwValue = PROXY_TYPE_DIRECT;
 	
-	// BUG This section needs to be cleaned up because it is a bug waiting to happen...
 	if(enable){
 		log_info("Enabling WinInet proxy");	
 		// Enable WPAD
@@ -39,19 +39,21 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 		if(acu){
 			Option[0].Value.dwValue |=  PROXY_TYPE_AUTO_PROXY_URL;
 			// Set ACU
-			Option[3].dwOption = INTERNET_PER_CONN_AUTOCONFIG_URL;
-			Option[3].Value.pszValue = (LPSTR)TEXT(acu);
+			Option[CurrentOption].dwOption = INTERNET_PER_CONN_AUTOCONFIG_URL;
+			Option[CurrentOption].Value.pszValue = (LPSTR)TEXT(acu);
+			CurrentOption++;
 		}
 
 		// Enable Proxy
 		if(proxy){
 			Option[0].Value.dwValue |= PROXY_TYPE_PROXY;
 			// Set Manual Proxy
-			Option[1].dwOption = INTERNET_PER_CONN_PROXY_SERVER;
-			Option[1].Value.pszValue = (LPSTR)TEXT(proxy);
+			Option[CurrentOption].dwOption = INTERNET_PER_CONN_PROXY_SERVER;
+			Option[CurrentOption].Value.pszValue = (LPSTR)TEXT(proxy);
+			CurrentOption++;
 			// Set bypass-list
-			Option[2].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
-			Option[2].Value.pszValue = (LPSTR)TEXT(bypass);
+			Option[CurrentOption].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
+			Option[CurrentOption].Value.pszValue = (LPSTR)TEXT(bypass);
 		}
 	}
 
@@ -70,7 +72,6 @@ int SetInternetProxy(const char* WPAD, const char* acu, const char* proxy, const
 			free(Option);
 		return -1;	
 	}
-
 
 	free(Option);
 	Option = NULL;
