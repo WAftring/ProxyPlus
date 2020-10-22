@@ -33,7 +33,6 @@ int SetSystemProxy(const char* proxy, const char* bypass, int enable){
 		retval = -1;
 	}
 	else{
-		WinHttpGetDefaultProxyConfiguration(&SetProxy);
 		log_info("WinHttp proxy set to %s", proxy);
 	}
 
