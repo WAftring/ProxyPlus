@@ -1,5 +1,6 @@
 #include "common.h"
 #include <string.h>
+#include <share.h>
 #include "nla.h"
 #include "ini.h"
 //TODO Update the log settings so that they make sense...
@@ -25,7 +26,7 @@ int main(){
 		return -1;
 	}
 	log_add_fp(pFile, LogInt);
-//	log_set_quiet(true);
+	log_set_quiet(true);
 	log_info("Logger started");
 
 	//Reading the general config
@@ -71,10 +72,7 @@ FILE* InitialSetup(){
 		return NULL;
 	}
 
-	err = fopen_s(&pTemp, "ProxyPlus.log", "a");
-
-	if(err != 0)
-		return NULL;
+	pTemp = _fsopen("ProxyPlus.log", "a+", _SH_DENYNO);
 
 	return pTemp;
 }
@@ -84,6 +82,6 @@ int ParseLogLevel(const char* LogLevel){
 	if(strcmp(LogLevel, "DEBUG") == 0)
 		return LOG_DEBUG;
 	else
-		return LOG_INFO;
+		return LOG_WARN;
 
 }
