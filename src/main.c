@@ -16,17 +16,18 @@ int main(){
 
 	config = ini_load("config.ini");
 
-	if(config == NULL)
+	if(config == NULL || pFile == NULL)
 		return -1;
 
 	const char* LogStr = ini_get(config, "general", "log-level");
 	LogInt = ParseLogLevel(LogStr);
 
-	if(pFile == NULL){
-		return -1;
-	}
 	log_add_fp(pFile, LogInt);
-	log_set_quiet(true);
+
+	const char* LogQuiet = ini_get(config, "general", "quiet");
+	if(strcmp(LogQuiet, "TRUE") == 0)
+		log_set_quiet(true);
+
 	log_info("Logger started");
 
 	//Reading the general config

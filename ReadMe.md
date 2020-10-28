@@ -12,20 +12,39 @@ This fills the missing gap between [insecure WPAD implemenations](https://www.no
 
 Enabling WinHttp and WinInet proxy depending:
 
-- Network Connection Profile
-- (TODO) Adapter being used
-- (TODO) Network name
-- (TODO) Connectivity to resource
-- (TODO) Time of day
+- Domain connectivity
 
+## Configuration
+
+The application is configured through a single .ini file called `config.ini`.
+
+To leave an option disabled, exclude it from the config.
+
+This file follows the format below:
+
+``` 
+[general]
+log-level   = "DEBUG"                               ; (String) supported levels are DEBUG and WARN
+watch       = "NLA"                                 ; (String) currently only supporting NLA indications
+quiet       = TRUE                                  ; (Bool) setting to TRUE will only write the logging to a file. Leaving blank writes to console
+
+
+[winhttp]
+proxy       = "proxy.contoso.com:9000"              ; (String) static proxy
+bypass-list = "<local>;"                            ; (String) exclusions for the proxy
+
+[wininet]
+wpad            = "TRUE"                            ; (Bool)                        
+auto-config-url = "https://proxy.contoso.com:9001"  ; (String) 
+proxy           = "https://proxy.contoso.com:9002"  ; (String)
+bypass-list     = "<local>;"                        ; (String)
+```
 
 ## How it works
 
 It uses the Windows API's to manage the proxy settings for the current users.
 
 Please note, since this runs in the context of the current users if you have proxies configured per user this will not address all of them.
-
-(This is planned for a future implementation)
 
 ## Todo
 
@@ -34,10 +53,8 @@ Please note, since this runs in the context of the current users if you have pro
 - [X] Get WinInet proxy working
 - [X] Get proxy state change with NLA working
 - [X] Add logging [(again very nice rxi)](https://github.com/rxi/log.c)
-- [ ] Add can reach X state check
-- [ ] Add time of day state change watch
-- [ ] Add option to run as a service
     
 ## Change Log
 
-- 08/13 Testing Versions
+- 08/13/2020 Testing Versions
+- 10/28/2020 v1
